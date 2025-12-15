@@ -43,14 +43,11 @@ export default function App() {
                 // e.g., Reset an inactivity timer, log analytics, etc.
                 console.log("User touched the screen!");
 
+                reset();
+
                 // --- THE TRICK ---
                 // Return false. This tells React Native:
                 // "I saw the touch, but I don't want to stop it. Let it pass to the child."
-                return false;
-            },
-
-            // Optional: Detect dragging movement too
-            onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
                 return false;
             },
         })
@@ -75,8 +72,8 @@ export default function App() {
         createTimeout();
     };
 
-    const pause = () => {
-        //TODO: Set up pause with user activity detection
+    const reset = () => {
+        startTime.current = Date.now();
     };
 
     const createTimeout = () => {
