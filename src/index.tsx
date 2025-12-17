@@ -5,11 +5,12 @@ import { useIdleTimerContext } from "./IdleTimerContext";
 
 export const DemoScreen = () => {
     const [isPrompt, setIsPrompt] = useState(false);
+    const [countdownTime, setCountdownTime] = useState<number>();
 
     const idleTimer = useIdleTimerContext();
 
     useEffect(() => {
-        console.log(idleTimer);
+        console.log(idleTimer?.startTime);
     }, []);
 
     const getSecondsFromDateCurrent = (date: number) => {
@@ -19,6 +20,12 @@ export const DemoScreen = () => {
 
         return time / 1000;
     };
+
+    useEffect(() => {
+        setInterval(() => {
+            console.log(idleTimer?.getRemainingTime());
+        }, 1000);
+    }, [idleTimer]);
 
     return (
         <View style={styles.container}>
@@ -41,7 +48,8 @@ export const DemoScreen = () => {
             </Modal>
 
             {/* <Text>{idle.current ? "Idle" : "Active"}</Text> */}
-            {/* {countdownTime && <Text>Timer {countdownTime.toFixed()}</Text>} */}
+            {countdownTime && <Text>Timer {countdownTime.toFixed()}</Text>}
+
             <StatusBar />
             <Button
                 title="Test button pressed"

@@ -2,22 +2,47 @@ import React, { useEffect, useRef, useState } from "react";
 import { Keyboard, PanResponder } from "react-native";
 
 export function useIdleTimer() {
+    // This countdown timer will trigger right away when mounted
     const startTime = useRef<number>(Date.now());
-    const lastReset = useRef<number>(Date.now());
     const lastIdle = useRef<number>(null);
-    const lastActive = useRef<number>(null);
-    const idleTime = useRef<number>(0);
-    const totalIdleTime = useRef<number>(0);
-    const promptTime = useRef<number>(0);
-    const remaining = useRef<number>(0);
+    const lastReset = useRef<number>(null);
 
-    // State References
-    const idle = useRef<boolean>(false);
-    const prompted = useRef<boolean>(false);
-    const paused = useRef<boolean>(false);
-    const firstLoad = useRef<boolean>(true);
-    const eventsBound = useRef<boolean>(false);
-    const tId = useRef<number>(null);
+    const remaningTime = useRef<number>(10); // Time countdown to trigger onIdle
+
+    const tid = useRef<NodeJS.Timeout | null>(null);
+
+    const onIdle = () => {
+        // TODO: Tempt implement for now, should be pass by user
+        // TODO: Need to implement flow to trigger onIdle
+        // *******************
+        // Need to create a setTimeout to trigger onIdle, with handle to clear the timeout
+        // If the timeout is not destroy before it reach it will trigger onIdle
+
+        console.log("onIdle");
+    };
+
+    const toggleIdle = () => {
+        if (tid.current) {
+            clearTimeout(tid.current);
+        }
+
+        // Create timeout and trigger onidle if the timeout is not destroy before it reach it will trigger onIdle
+        tid.current = setTimeout(() => {
+            onIdle();
+        }, remaningTime.current * 1000);
+    };
+
+    const getRemainingTime = () => {
+        const timeOutTime = startTime.current + remaningTime.current * 1000;
+
+        const remainingTime = timeOutTime - Date.now();
+
+        if (remainingTime > 0) {
+            return remainingTime;
+        } else {
+            return 0;
+        }
+    };
 
     const panResponder = useRef(
         PanResponder.create({
@@ -33,41 +58,12 @@ export function useIdleTimer() {
     useEffect(() => {
         // On mount
         console.log("mounting");
-        start();
     }, []);
-
-    const start = () => {
-        destroyTimeout();
-
-        // Set state
-        idle.current = false;
-        prompted.current = false;
-        paused.current = false;
-        remaining.current = 0;
-        promptTime.current = 0;
-
-        createTimeout();
-    };
 
     const reset = () => {
         startTime.current = Date.now();
-    };
-
-    const createTimeout = () => {
-        destroyTimeout();
-
-        setTimeout(toggleIdleState, 1000);
-    };
-
-    const toggleIdleState = () => {
-        idle.current = !idle.current;
-    };
-
-    const destroyTimeout = () => {
-        if (tId.current !== null) {
-            clearTimeout(tId.current);
-            tId.current = null;
-        }
+        lastReset.current = Date.now();
+        toggleIdle();
     };
 
     useEffect(() => {
@@ -81,6 +77,8 @@ export function useIdleTimer() {
         // Fired when keyboard is fully closed
         const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
             console.log("Keyboard is CLOSED");
+
+            reset();
         });
 
         return () => {
@@ -91,8 +89,9 @@ export function useIdleTimer() {
 
     const idleTimer = {
         panResponder,
-        start,
         reset,
+        startTime: startTime.current,
+        getRemainingTime,
     };
 
     return idleTimer;
