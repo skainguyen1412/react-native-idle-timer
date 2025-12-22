@@ -5,6 +5,8 @@ export interface IdleTimerProps {
     reset: () => void;
     startTime: number;
     getRemainingTime: () => void;
+    pause: () => void;
+    resume: () => void;
     // idle: boolean;
     // prompted: boolean;
     // paused: boolean;

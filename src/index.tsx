@@ -25,7 +25,7 @@ export const DemoScreen = () => {
         setInterval(() => {
             console.log(idleTimer?.getRemainingTime());
             setCountdownTime(idleTimer?.getRemainingTime() ?? 0);
-        }, 1000);
+        }, 500);
     }, [idleTimer]);
 
     return (
@@ -53,9 +53,16 @@ export const DemoScreen = () => {
 
             <StatusBar />
             <Button
-                title="Test button pressed"
+                title="Pause"
                 onPress={() => {
-                    console.log("Test button pressed");
+                    idleTimer.pause();
+                }}
+            />
+
+            <Button
+                title="Resume"
+                onPress={() => {
+                    idleTimer.resume();
                 }}
             />
             <TextInput

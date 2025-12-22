@@ -2,10 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Keyboard, PanResponder } from "react-native";
 
 export function useIdleTimer() {
-    // This countdown timer will trigger right away when mounted
     const startTime = useRef<number>(Date.now());
+
+    const currentTime = useRef<number>(Date.now());
     const lastIdle = useRef<number>(null);
     const lastReset = useRef<number>(null);
+
+    const isPause = useRef<boolean>(false);
+    const pauseTime = useRef<number>(null);
 
     const remaningTime = useRef<number>(10); // Time countdown to trigger onIdle
 
@@ -15,26 +19,45 @@ export function useIdleTimer() {
         console.log("onIdle");
     };
 
-    const toggleIdle = () => {
+    const getRemainingTime = () => {
+        // Handle for special case when user pause the timer
+        if (isPause.current && pauseTime.current) {
+            if (pauseTime.current > 0) {
+                return (pauseTime.current / 1000).toFixed();
+            } else {
+                return 0;
+            }
+        } else {
+            const timeOutTime =
+                currentTime.current + remaningTime.current * 1000;
+            const remainingTime = timeOutTime - Date.now();
+            if (remainingTime > 0) {
+                return (remainingTime / 1000).toFixed();
+            } else {
+                return 0;
+            }
+        }
+    };
+
+    const pause = () => {
+        // We need to clear the timeout and pause the remainingTime
         if (tid.current) {
             clearTimeout(tid.current);
         }
 
-        // Create timeout and trigger onidle if the timeout is not destroy before it reach it will trigger onIdle
-        tid.current = setTimeout(() => {
-            onIdle();
-        }, remaningTime.current * 1000);
+        isPause.current = true;
+        pauseTime.current =
+            currentTime.current + remaningTime.current * 1000 - Date.now();
     };
 
-    const getRemainingTime = () => {
-        const timeOutTime = startTime.current + remaningTime.current * 1000;
+    const resume = () => {
+        isPause.current = false;
+        pauseTime.current = null;
 
-        const remainingTime = timeOutTime - Date.now();
-
-        if (remainingTime > 0) {
-            return (remainingTime / 1000).toFixed();
-        } else {
-            return 0;
+        if (!tid.current) {
+            tid.current = setTimeout(() => {
+                onIdle();
+            }, remaningTime.current * 1000);
         }
     };
 
@@ -55,9 +78,16 @@ export function useIdleTimer() {
     }, []);
 
     const reset = () => {
-        startTime.current = Date.now();
+        currentTime.current = Date.now();
         lastReset.current = Date.now();
-        toggleIdle();
+
+        if (tid.current) {
+            clearTimeout(tid.current);
+        }
+
+        tid.current = setTimeout(() => {
+            onIdle();
+        }, remaningTime.current * 1000);
     };
 
     useEffect(() => {
@@ -65,14 +95,14 @@ export function useIdleTimer() {
 
         // Fired when keyboard starts sliding up
         const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+            // TODO: Implement reset and pause at here
+
             console.log("Keyboard is OPEN");
         });
 
         // Fired when keyboard is fully closed
         const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-            console.log("Keyboard is CLOSED");
-
-            reset();
+            // TODO: Implement resume
         });
 
         return () => {
@@ -84,8 +114,10 @@ export function useIdleTimer() {
     const idleTimer = {
         panResponder,
         reset,
-        startTime: startTime.current,
+        startTime: currentTime.current,
         getRemainingTime,
+        pause,
+        resume,
     };
 
     return idleTimer;

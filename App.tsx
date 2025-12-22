@@ -14,8 +14,6 @@ import { IdleTimerProvider, useIdleTimerContext } from "./src/IdleTimerContext";
 import { DemoScreen } from "./src";
 
 export default function App() {
-    // Show prompt
-
     return (
         <IdleTimerProvider>
             <DemoScreen />

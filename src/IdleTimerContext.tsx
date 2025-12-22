@@ -17,6 +17,12 @@ const IdleTimerContext = createContext<IdleTimerProps | null>(null);
 export const useIdleTimerContext = () => {
     const context = useContext(IdleTimerContext);
 
+    if (!context) {
+        throw new Error(
+            "useIdleTimerContext must be used within a IdleTimerProvider"
+        );
+    }
+
     return context;
 };
 
