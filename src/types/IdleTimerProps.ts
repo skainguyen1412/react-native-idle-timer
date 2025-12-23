@@ -1,10 +1,10 @@
-import { PanResponder, PanResponderInstance } from "react-native";
+import type { PanResponderInstance } from "react-native";
 
 export interface IdleTimerProps {
     panResponder: PanResponderInstance;
     reset: () => void;
     startTime: number;
-    getRemainingTime: () => void;
+    getRemainingTime: () => string | number;
     pause: () => void;
     resume: () => void;
     currentTime: number;

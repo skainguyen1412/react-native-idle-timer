@@ -27,6 +27,16 @@ const config: Config = {
   // The directory where Jest should output its coverage files
   coverageDirectory: "coverage",
 
+  testEnvironment: "node",
+
+  transform: {
+    "^.+\\.(t|j)sx?$": "babel-jest",
+  },
+
+  moduleNameMapper: {
+    "^react-native$": "<rootDir>/__mocks__/react-native.ts",
+  },
+
   // An array of regexp pattern strings used to skip coverage collection
   // coveragePathIgnorePatterns: [
   //   "/node_modules/"
