@@ -120,18 +120,14 @@ export function useIdleTimer() {
     };
 
     useEffect(() => {
-        // --- A. Listen for Keyboard Appearance ---
-
-        // Fired when keyboard starts sliding up
         const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
-            // TODO: Implement reset and pause at here
-
             console.log("Keyboard is OPEN");
+            reset();
+            pause();
         });
 
-        // Fired when keyboard is fully closed
         const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-            // TODO: Implement resume
+            resume();
         });
 
         return () => {
