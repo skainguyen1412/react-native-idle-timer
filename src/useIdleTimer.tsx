@@ -6,8 +6,9 @@ import React, {
     useState,
 } from "react";
 import { Keyboard, PanResponder } from "react-native";
+import { UseIdleTimerProps } from "./types/useIdleTimerProps";
 
-export function useIdleTimer() {
+export function useIdleTimer(props: UseIdleTimerProps = {}) {
     const startTime = useRef<number>(Date.now());
     const currentTime = useRef<number>(Date.now());
     const lastIdle = useRef<number>(null);
@@ -17,7 +18,7 @@ export function useIdleTimer() {
 
     const isIdle = useRef<boolean>(false);
 
-    const remaningTime = useRef<number>(10); // Time countdown to trigger onIdle
+    const remaningTime = useRef<number>(props.timeout ?? 10); // Time countdown to trigger onIdle
 
     const currentState = useRef<"running" | "paused" | "idle">("running");
 
@@ -25,6 +26,7 @@ export function useIdleTimer() {
 
     const onIdle = () => {
         console.log("onIdle");
+        props.onIdle?.();
     };
 
     const getCurrentState = () => {
