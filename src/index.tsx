@@ -23,7 +23,7 @@ import { useIdleTimer } from "./useIdleTimer";
 export const DemoScreen = () => {
     const [remainingTime, setRemainingTime] = useState(0);
     const idleTimer = useIdleTimer({
-        timeout: 30, // 30 seconds
+        timeout: 10, // 10 seconds
         onIdle: () => {
             console.log("User is idle");
         },
