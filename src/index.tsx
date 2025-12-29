@@ -1,444 +1,424 @@
 import { useEffect, useState } from "react";
 import {
-    Button,
     Modal,
+    Pressable,
     ScrollView,
     StatusBar,
+    StyleSheet,
     Text,
     TextInput,
-    TouchableOpacity,
     View,
 } from "react-native";
-import { StyleSheet } from "react-native";
 import { useIdleTimerContext } from "./IdleTimerContext";
 
+// =============================================================================
+// DEMO SCREEN
+// A simple demo showcasing react-native-idle-timer features
+// =============================================================================
+
 interface DemoScreenProps {
+    /** Optional: Pass isIdle from parent for event-driven updates */
     isIdle?: boolean;
 }
 
 export const DemoScreen = ({ isIdle: isIdleProp }: DemoScreenProps = {}) => {
-    const [countdownTime, setCountdownTime] = useState<number>(0);
-    const [lastResetTime, setLastResetTime] = useState<number | null>(null);
-    const [lastIdleTime, setLastIdleTime] = useState<number | null>(null);
-
+    const [remainingTime, setRemainingTime] = useState(0);
     const idleTimer = useIdleTimerContext();
 
-    // Use prop for idle state (event-driven) or fallback to polling
     const isIdle = isIdleProp ?? idleTimer.getIsIdle();
-    const currentState = idleTimer.getCurrentState();
+    const state = idleTimer.getCurrentState();
 
-    // Lightweight interval only for countdown display (1 second is sufficient for UI)
+    // Update countdown every second
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            setCountdownTime(idleTimer.getRemainingTime());
-            setLastResetTime(idleTimer.getLastReset());
-            setLastIdleTime(idleTimer.getLastIdle());
+        const interval = setInterval(() => {
+            setRemainingTime(idleTimer.getRemainingTime());
         }, 1000);
-
-        // Initial update
-        setCountdownTime(idleTimer.getRemainingTime());
-        setLastResetTime(idleTimer.getLastReset());
-        setLastIdleTime(idleTimer.getLastIdle());
-
-        return () => clearInterval(intervalId);
+        setRemainingTime(idleTimer.getRemainingTime());
+        return () => clearInterval(interval);
     }, [idleTimer]);
-
-    const formatTimestamp = (timestamp: number | null): string => {
-        if (!timestamp) return "Never";
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString();
-    };
-
-    const getStateColor = (): string => {
-        switch (currentState) {
-            case "idle":
-                return "#ef4444"; // red
-            case "paused":
-                return "#f59e0b"; // amber
-            case "running":
-                return "#10b981"; // green
-            default:
-                return "#6b7280"; // gray
-        }
-    };
-
-    const getStateEmoji = (): string => {
-        switch (currentState) {
-            case "idle":
-                return "😴";
-            case "paused":
-                return "⏸️";
-            case "running":
-                return "▶️";
-            default:
-                return "❓";
-        }
-    };
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle="light-content" />
+
             <ScrollView
+                style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
             >
-                {/* Header Section */}
-                <View style={styles.header}>
-                    <Text style={styles.title}>Idle Timer Demo</Text>
-                    <Text style={styles.subtitle}>React Native Idle Timer</Text>
+                {/* Header */}
+                <Text style={styles.logo}>⏱️</Text>
+                <Text style={styles.title}>Idle Timer</Text>
+                <Text style={styles.subtitle}>React Native Demo</Text>
+
+                {/* Main Status Display */}
+                <View style={styles.statusContainer}>
+                    <Text style={styles.countdown}>{remainingTime}</Text>
+                    <Text style={styles.countdownLabel}>seconds remaining</Text>
+                    <StatusBadge state={state} />
                 </View>
 
-                {/* Status Card */}
-                <View style={[styles.card, styles.statusCard]}>
-                    <View style={styles.statusHeader}>
-                        <Text style={styles.statusEmoji}>
-                            {getStateEmoji()}
-                        </Text>
-                        <View style={styles.statusInfo}>
-                            <Text style={styles.statusLabel}>Status</Text>
-                            <Text
-                                style={[
-                                    styles.statusValue,
-                                    { color: getStateColor() },
-                                ]}
-                            >
-                                {currentState.toUpperCase()}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>User Activity:</Text>
-                        <Text
-                            style={[
-                                styles.infoValue,
-                                { color: isIdle ? "#ef4444" : "#10b981" },
-                            ]}
-                        >
-                            {isIdle ? "Idle" : "Active"}
-                        </Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Remaining Time:</Text>
-                        <Text style={[styles.infoValue, styles.countdownText]}>
-                            {countdownTime}s
-                        </Text>
-                    </View>
+                {/* Control Buttons */}
+                <View style={styles.controls}>
+                    <ControlButton
+                        label="Pause"
+                        icon="⏸"
+                        onPress={idleTimer.pause}
+                        active={state === "paused"}
+                        variant="warning"
+                    />
+                    <ControlButton
+                        label="Resume"
+                        icon="▶️"
+                        onPress={idleTimer.resume}
+                        active={state === "running"}
+                        variant="success"
+                    />
+                    <ControlButton
+                        label="Reset"
+                        icon="↻"
+                        onPress={idleTimer.reset}
+                        variant="primary"
+                    />
                 </View>
 
-                {/* Timer Info Card */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Timer Information</Text>
-                    <View style={styles.divider} />
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Last Reset:</Text>
-                        <Text style={styles.infoValue}>
-                            {formatTimestamp(lastResetTime)}
-                        </Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoLabel}>Last Idle:</Text>
-                        <Text style={styles.infoValue}>
-                            {formatTimestamp(lastIdleTime)}
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Controls Card */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Controls</Text>
-                    <View style={styles.divider} />
-                    <View style={styles.buttonRow}>
-                        <TouchableOpacity
-                            style={[
-                                styles.button,
-                                styles.pauseButton,
-                                currentState === "paused" &&
-                                    styles.buttonActive,
-                            ]}
-                            onPress={() => idleTimer.pause()}
-                        >
-                            <Text style={styles.buttonText}>⏸️ Pause</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.button,
-                                styles.resumeButton,
-                                currentState === "running" &&
-                                    styles.buttonActive,
-                            ]}
-                            onPress={() => idleTimer.resume()}
-                        >
-                            <Text style={styles.buttonText}>▶️ Resume</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.button, styles.resetButton]}
-                        onPress={() => idleTimer.reset()}
-                    >
-                        <Text style={styles.buttonText}>🔄 Reset Timer</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Interactive Test Card */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Interactive Test</Text>
-                    <Text style={styles.cardDescription}>
-                        Type in the input below or touch anywhere to reset the
-                        timer
+                {/* Interactive Test Area */}
+                <View style={styles.testSection}>
+                    <Text style={styles.sectionTitle}>
+                        Test Activity Detection
                     </Text>
-                    <View style={styles.divider} />
+                    <Text style={styles.sectionHint}>
+                        Touch or type below to reset the timer
+                    </Text>
                     <TextInput
-                        placeholder="Type here to test activity detection..."
-                        placeholderTextColor="#9ca3af"
-                        style={styles.textInput}
+                        style={styles.input}
+                        placeholder="Start typing..."
+                        placeholderTextColor="#666"
                         multiline
                     />
-                    <Text style={styles.hintText}>
-                        💡 Tip: Try pausing, then typing. The keyboard will
-                        pause the timer.
-                    </Text>
                 </View>
 
-                {/* Idle Modal */}
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={isIdle}
-                    onRequestClose={() => {}}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContent}>
-                            <Text style={styles.modalEmoji}>😴</Text>
-                            <Text style={styles.modalTitle}>You're Idle!</Text>
-                            <Text style={styles.modalMessage}>
-                                You've been inactive for too long. Touch
-                                anywhere to become active again.
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.modalButton}
-                                onPress={() => idleTimer.reset()}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    I'm Back!
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
+                {/* API Reference */}
+                <View style={styles.apiSection}>
+                    <Text style={styles.sectionTitle}>Available Methods</Text>
+                    <ApiMethod
+                        name="reset()"
+                        desc="Reset timer & mark active"
+                    />
+                    <ApiMethod name="pause()" desc="Pause the countdown" />
+                    <ApiMethod name="resume()" desc="Resume the countdown" />
+                    <ApiMethod
+                        name="getRemainingTime()"
+                        desc="Get seconds left"
+                    />
+                    <ApiMethod
+                        name="getIsIdle()"
+                        desc="Check if user is idle"
+                    />
+                    <ApiMethod
+                        name="getCurrentState()"
+                        desc="Get timer state"
+                    />
+                </View>
             </ScrollView>
+
+            {/* Idle Modal */}
+            <IdleModal visible={isIdle} onDismiss={idleTimer.reset} />
         </View>
     );
 };
 
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+const StatusBadge = ({ state }: { state: "running" | "paused" | "idle" }) => {
+    const config = {
+        running: { color: "#22c55e", label: "RUNNING" },
+        paused: { color: "#f59e0b", label: "PAUSED" },
+        idle: { color: "#ef4444", label: "IDLE" },
+    }[state];
+
+    return (
+        <View style={[styles.badge, { backgroundColor: config.color + "20" }]}>
+            <View
+                style={[styles.badgeDot, { backgroundColor: config.color }]}
+            />
+            <Text style={[styles.badgeText, { color: config.color }]}>
+                {config.label}
+            </Text>
+        </View>
+    );
+};
+
+interface ControlButtonProps {
+    label: string;
+    icon: string;
+    onPress: () => void;
+    active?: boolean;
+    variant: "primary" | "success" | "warning";
+}
+
+const ControlButton = ({
+    label,
+    icon,
+    onPress,
+    active,
+    variant,
+}: ControlButtonProps) => {
+    const colors = {
+        primary: "#3b82f6",
+        success: "#22c55e",
+        warning: "#f59e0b",
+    };
+    const color = colors[variant];
+
+    return (
+        <Pressable
+            style={({ pressed }) => [
+                styles.controlBtn,
+                active && { borderColor: color, borderWidth: 2 },
+                pressed && { opacity: 0.8 },
+            ]}
+            onPress={onPress}
+        >
+            <Text style={styles.controlIcon}>{icon}</Text>
+            <Text style={styles.controlLabel}>{label}</Text>
+        </Pressable>
+    );
+};
+
+const ApiMethod = ({ name, desc }: { name: string; desc: string }) => (
+    <View style={styles.apiRow}>
+        <Text style={styles.apiName}>{name}</Text>
+        <Text style={styles.apiDesc}>{desc}</Text>
+    </View>
+);
+
+interface IdleModalProps {
+    visible: boolean;
+    onDismiss: () => void;
+}
+
+const IdleModal = ({ visible, onDismiss }: IdleModalProps) => (
+    <Modal visible={visible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+                <Text style={styles.modalEmoji}>💤</Text>
+                <Text style={styles.modalTitle}>You're Idle</Text>
+                <Text style={styles.modalText}>
+                    No activity detected. Tap below to continue.
+                </Text>
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.modalBtn,
+                        pressed && { opacity: 0.9 },
+                    ]}
+                    onPress={onDismiss}
+                >
+                    <Text style={styles.modalBtnText}>I'm Back</Text>
+                </Pressable>
+            </View>
+        </View>
+    </Modal>
+);
+
+// =============================================================================
+// STYLES
+// =============================================================================
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f9fafb",
+        backgroundColor: "#0f172a",
+    },
+    scroll: {
+        flex: 1,
     },
     scrollContent: {
-        padding: 20,
-        paddingTop: 60,
-        paddingBottom: 40,
-    },
-    header: {
+        padding: 24,
+        paddingTop: 72,
         alignItems: "center",
-        marginBottom: 24,
+    },
+
+    // Header
+    logo: {
+        fontSize: 48,
+        marginBottom: 8,
     },
     title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        color: "#111827",
-        marginBottom: 4,
+        fontSize: 32,
+        fontWeight: "700",
+        color: "#f8fafc",
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,
-        color: "#6b7280",
-    },
-    card: {
-        backgroundColor: "#ffffff",
-        borderRadius: 12,
-        padding: 20,
-        marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    statusCard: {
-        borderLeftWidth: 4,
-        borderLeftColor: "#10b981",
-    },
-    statusHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    statusEmoji: {
-        fontSize: 32,
-        marginRight: 12,
-    },
-    statusInfo: {
-        flex: 1,
-    },
-    statusLabel: {
-        fontSize: 12,
-        color: "#6b7280",
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-        marginBottom: 4,
-    },
-    statusValue: {
-        fontSize: 24,
-        fontWeight: "bold",
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "#e5e7eb",
-        marginVertical: 12,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#111827",
-        marginBottom: 4,
-    },
-    cardDescription: {
-        fontSize: 14,
-        color: "#6b7280",
+        color: "#64748b",
         marginTop: 4,
-        marginBottom: 4,
     },
-    infoRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
+
+    // Status
+    statusContainer: {
         alignItems: "center",
-        marginVertical: 8,
+        marginTop: 40,
+        marginBottom: 32,
     },
-    infoLabel: {
-        fontSize: 14,
-        color: "#6b7280",
+    countdown: {
+        fontSize: 96,
+        fontWeight: "200",
+        color: "#f8fafc",
+        lineHeight: 100,
     },
-    infoValue: {
+    countdownLabel: {
         fontSize: 14,
+        color: "#64748b",
+        marginTop: 4,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+    },
+    badge: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginTop: 16,
+    },
+    badgeDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    badgeText: {
+        fontSize: 12,
         fontWeight: "600",
-        color: "#111827",
+        letterSpacing: 0.5,
     },
-    countdownText: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#3b82f6",
-    },
-    buttonRow: {
+
+    // Controls
+    controls: {
         flexDirection: "row",
         gap: 12,
-        marginBottom: 12,
+        marginBottom: 40,
     },
-    button: {
-        flex: 1,
-        paddingVertical: 14,
+    controlBtn: {
+        backgroundColor: "#1e293b",
+        paddingVertical: 16,
         paddingHorizontal: 20,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f3f4f6",
+        minWidth: 90,
+        borderWidth: 1,
+        borderColor: "#334155",
     },
-    pauseButton: {
-        backgroundColor: "#fef3c7",
+    controlIcon: {
+        fontSize: 20,
+        marginBottom: 4,
     },
-    resumeButton: {
-        backgroundColor: "#d1fae5",
+    controlLabel: {
+        color: "#94a3b8",
+        fontSize: 13,
+        fontWeight: "500",
     },
-    resetButton: {
-        backgroundColor: "#dbeafe",
-        marginTop: 0,
+
+    // Test Section
+    testSection: {
+        width: "100%",
+        backgroundColor: "#1e293b",
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 24,
     },
-    buttonActive: {
-        opacity: 0.8,
-        borderWidth: 2,
-        borderColor: "#3b82f6",
-    },
-    buttonText: {
+    sectionTitle: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#111827",
+        color: "#f8fafc",
+        marginBottom: 4,
     },
-    textInput: {
-        borderWidth: 1,
-        borderColor: "#d1d5db",
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        color: "#111827",
-        backgroundColor: "#ffffff",
-        minHeight: 100,
+    sectionHint: {
+        fontSize: 13,
+        color: "#64748b",
+        marginBottom: 16,
+    },
+    input: {
+        backgroundColor: "#0f172a",
+        borderRadius: 10,
+        padding: 16,
+        color: "#f8fafc",
+        fontSize: 15,
+        minHeight: 80,
         textAlignVertical: "top",
+        borderWidth: 1,
+        borderColor: "#334155",
     },
-    hintText: {
-        fontSize: 12,
-        color: "#6b7280",
-        marginTop: 8,
-        fontStyle: "italic",
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        justifyContent: "center",
-        alignItems: "center",
+
+    // API Section
+    apiSection: {
+        width: "100%",
+        backgroundColor: "#1e293b",
+        borderRadius: 16,
         padding: 20,
     },
-    modalContent: {
-        backgroundColor: "#ffffff",
-        borderRadius: 16,
+    apiRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#334155",
+    },
+    apiName: {
+        fontFamily: "monospace",
+        fontSize: 13,
+        color: "#38bdf8",
+    },
+    apiDesc: {
+        fontSize: 13,
+        color: "#64748b",
+    },
+
+    // Modal
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.8)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 24,
+    },
+    modalCard: {
+        backgroundColor: "#1e293b",
+        borderRadius: 20,
         padding: 32,
         alignItems: "center",
         width: "100%",
-        maxWidth: 400,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        maxWidth: 320,
     },
     modalEmoji: {
-        fontSize: 64,
+        fontSize: 56,
         marginBottom: 16,
     },
     modalTitle: {
         fontSize: 24,
-        fontWeight: "bold",
-        color: "#111827",
-        marginBottom: 12,
-        textAlign: "center",
+        fontWeight: "700",
+        color: "#f8fafc",
+        marginBottom: 8,
     },
-    modalMessage: {
-        fontSize: 16,
-        color: "#6b7280",
+    modalText: {
+        fontSize: 15,
+        color: "#94a3b8",
         textAlign: "center",
         marginBottom: 24,
-        lineHeight: 24,
+        lineHeight: 22,
     },
-    modalButton: {
+    modalBtn: {
         backgroundColor: "#3b82f6",
         paddingVertical: 14,
-        paddingHorizontal: 32,
-        borderRadius: 8,
-        minWidth: 200,
+        paddingHorizontal: 40,
+        borderRadius: 10,
     },
-    modalButtonText: {
-        color: "#ffffff",
+    modalBtnText: {
+        color: "#fff",
         fontSize: 16,
         fontWeight: "600",
-        textAlign: "center",
     },
 });
